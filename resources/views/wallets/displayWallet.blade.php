@@ -42,7 +42,7 @@
                                 <!-- /.col -->
                                 <div class="col-sm-2 invoice-col">
                                     <label>تاريخ الاغلاق:</label>
-                                    <p>@isset($closeDate->closeDate){{$closeDate->closeDate}}@else -- @endisset</p>
+                                    <p>{{$data->closeDate == null ? '--':$data->closeDate}}</p>
                                 </div>
                                 <div class="col-sm-2 invoice-col">
                                     <label>المبلغ الاجمالي:</label>
@@ -78,8 +78,8 @@
                                             @foreach($cash as $item)
                                                 <tr>
                                                     <td>{{$item->id}}</td>
-                                                    <td>{{$item->additionAmount}}</td>
-                                                    <td>{{$item->additionDate}}</td>
+                                                    <td>{{$item->amount}}</td>
+                                                    <td>{{$item->date}}</td>
                                                     <td>{{$item->reason}}</td>
                                                     <td><img src="/images/addCash/{{$item->attachFile}}" alt="Girl in a jacket" width="100" height="60">
                                                     </td>
@@ -117,8 +117,8 @@
                                             @foreach($withdraw as $item)
                                                 <tr>
                                                     <td>{{$item->id}}</td>
-                                                    <td>{{$item->withdrawAmount}}</td>
-                                                    <td>{{$item->withdrawDate}}</td>
+                                                    <td>{{$item->amount}}</td>
+                                                    <td>{{$item->date}}</td>
                                                     <td>{{$item->reason}}</td>
                                                     <td><img src="/images/withdraw/{{$item->attachFile}}" alt="Girl in a jacket" width="100" height="60"></td>
                                                 </tr>

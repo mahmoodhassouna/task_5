@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\WithdrawRequest;
 use App\Models\CloseWallet;
 use App\Models\Wallet;
+use App\Models\WithdrawAddCash;
 use App\Models\WithdrawCash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -77,12 +78,13 @@ class WithdrawCashController extends Controller
 
                 $file_name = $this->saveImage($request->attachFile, 'images/withdraw');
 
-                WithdrawCash::insert([
-                    'withdrawAmount' => $request->post('withdrawAmount'),
-                    'withdrawDate' => $request->post('withdrawDate'),
+                WithdrawAddCash::insert([
+                    'amount' => $request->post('withdrawAmount'),
+                    'date' => $request->post('withdrawDate'),
                     'reason' => $request->post('reason'),
                     'attachFile' => $file_name,
                     'wallet_id' => $request->post('wallet_id'),
+                    'type' => 'سحب',
 
                 ]);
 
@@ -154,12 +156,13 @@ class WithdrawCashController extends Controller
 
                 $file_name = $this->saveImage($request->attachFile, 'images/withdraw');
 
-                WithdrawCash::insert([
-                    'withdrawAmount' => $request->post('withdrawAmount'),
-                    'withdrawDate' => $request->post('withdrawDate'),
+                WithdrawAddCash::insert([
+                    'amount' => $request->post('withdrawAmount'),
+                    'date' => $request->post('withdrawDate'),
                     'reason' => $request->post('reason'),
                     'attachFile' => $file_name,
                     'wallet_id' => $request->post('wallet_id'),
+                    'type' => 'سحب',
 
                 ]);
 
@@ -174,17 +177,15 @@ class WithdrawCashController extends Controller
 
                     $totalAmount = $wallet->totalAmount - $request->post('withdrawAmount');
 
-                    CloseWallet::insert([
-                        'wallet_id' => $request->post('wallet_id'),
-                        'closeDate' => $request->post('withdrawDate'),
-                        'reason' => $request->post('reason'),
-                    ]);
 
                     $wallet->update([
-                        'totalAmount' => $totalAmount,
-                        'status' => 0,
-                       // 'baseAmount' => 0,
+                        'closeReason'=>$request->post('reason'),
+                        'closeDate'=>$request->post('withdrawDate'),
+                        'totalAmount'=>$totalAmount,
+                        'status'=>0,
                     ]);
+
+
                     DB::commit();
                     return redirect()->route('main');
                }

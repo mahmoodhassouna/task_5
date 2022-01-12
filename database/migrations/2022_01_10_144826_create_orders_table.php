@@ -25,7 +25,8 @@ class CreateOrdersTable extends Migration
             $table->double('expectedProfit')->length(20);
             $table->enum('projectType',['زراعي','تجاري','صناعي']);
             $table->enum('orderCase',['قيد الدراسة','مرفوض','مقبول']);
-            $table->boolean('paymentCase')->default(0)->length(1);
+            //$table->boolean('paymentCase')->default(0)->length(1);
+            $table->string('CloseReason',150)->nullable();
             $table->foreignId('wallet_id')->nullable()->constrained('wallets','id')->nullOnDelete();
             $table->timestamps();
         });

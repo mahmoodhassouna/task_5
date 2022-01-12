@@ -312,12 +312,12 @@
                                        <td>'+item.idNumber+'</td>\
                                        <td>'+item.phone+'</td>\
                                        <td>'+(item.orderCase == 'قيد الدراسة' ? '<span class="badge bg-warning">قيد الدراسة</span>':item.orderCase == 'مرفوض' ? '<span class="badge bg-danger">مرفوض</span>':'<span class="badge bg-success">مقبول</span>')+'</td>\
-                                       <td>'+(item.paymentCase == 0 ? '<span class="badge bg-danger">غير مدفوع</span>':'<span class="badge bg-success">مدفوع</span>')+'</td>\
+                                       <td>'+(item.wallet_id == null ? '<span class="badge bg-danger">غير مدفوع</span>':'<span class="badge bg-success">مدفوع</span>')+'</td>\
                                        <td>'+(item.wallet_id == null ? '--':item.wallet.walletName)+'</td>\
                                        <td>'+item.projectAmount+'</td>\
                                        <td>'+item.repaymentFinancingAmountMonths+'</td>\
                                        <td>'+item.orderDate+'</td>\
-                                       <td >'+(item.orderCase == 'قيد الدراسة' ? '<button class="btn btn-success accept" value="'+item.id+'" >قبول</button> <button type="button" class="btn btn-warning rejected"  value="'+item.id+'" data-whatever="@mdo">رفض</button> ':item.orderCase == 'مقبول' && item.paymentCase == 0 ? '<button type="button" class="btn btn-info payment_order"  value="'+item.id+'" data-whatever="@mdo">تعين محفظة </button>':'')+'<button class="btn btn-danger deleteOrder" value="'+item.id+'" >حذف</button> '+'</td>\
+                                       <td >'+(item.orderCase == 'قيد الدراسة' ? '<button class="btn btn-success accept" value="'+item.id+'" >قبول</button> <button type="button" class="btn btn-warning rejected"  value="'+item.id+'" data-whatever="@mdo">رفض</button> ':item.orderCase == 'مقبول' && item.wallet_id == null ? '<button type="button" class="btn btn-info payment_order"  value="'+item.id+'" data-whatever="@mdo">تعين محفظة </button>':'')+'<button class="btn btn-danger deleteOrder" value="'+item.id+'" >حذف</button> '+'</td>\
                                           </tr>');
                     });
                 }
@@ -754,11 +754,11 @@
                                 showConfirmButton: false,
                                 timer: 1500
                             })
-                            $('#addWallet').find('input').val('');
+                            $('#addOrder').find('input').val('');
                             $('#display_error').hide();
 
                         }else {
-                            $('#addWallet').find('input').val('');
+                            $('#addOrder').find('input').val('');
                             Swal.fire({
                                 position: 'top-end',
                                 icon: 'error',

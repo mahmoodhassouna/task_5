@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AddCash;
 use App\Models\Wallet;
+use App\Models\WithdrawAddCash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -79,12 +80,13 @@ class AddCashController extends Controller
 
                     $file_name = $this->saveImage($request->attachFile, 'images/addCash');
 
-                    AddCash::insert([
-                        'additionAmount' => $request->post('additionAmount'),
-                        'additionDate' => $request->post('additionDate'),
+                    WithdrawAddCash::insert([
+                        'amount' => $request->post('additionAmount'),
+                        'date' => $request->post('additionDate'),
                         'reason' => $request->post('reason'),
                         'attachFile' => $file_name,
                         'wallet_id' => $request->post('wallet_id'),
+                        'type' => 'اضافة',
 
                     ]);
 

@@ -17,6 +17,8 @@ class CreateWalletsTable extends Migration
             $table->id();
             $table->string('walletName',40)->unique();
             $table->string('attachWallet',150)->nullable();
+            $table->string('closeReason',50)->nullable();
+            $table->string('closeDate',50)->nullable();
             $table->double('baseAmount')->length(20);
             $table->double('totalAmount')->length(20);
             $table->boolean('status')->default(1)->length(1);

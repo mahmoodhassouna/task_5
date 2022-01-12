@@ -75,8 +75,7 @@ class OrderController extends Controller
                         'msg'=>'الطلب غير موجود'
                     ]);
                 }
-                    $order->update(['orderCase'=>'مرفوض']);
-                    RejectedOrders::create($request->all());
+                    $order->update(['orderCase'=>'مرفوض','CloseReason'=>$request->post('reason')]);
                     DB::commit();
                     return response()->json([
                         'status'=>200,
@@ -152,7 +151,7 @@ class OrderController extends Controller
 
                 $order->update([
                     'wallet_id'=>$request->post('wallet_id'),
-                    'paymentCase'=>1,
+                   // 'paymentCase'=>1,
                 ]);
 
                 $wallet->update([

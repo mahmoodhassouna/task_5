@@ -47,17 +47,14 @@ class WalletController extends Controller
                 ]);
             }else{
 
-              CloseWallet::insert([
-                  'wallet_id'=>$request->post('wallet_id'),
-                  'closeDate'=>$request->post('closeDate'),
-                  'reason'=>$request->post('reason'),
-              ]);
-
                 $wallet->update([
+                    'closeReason'=>$request->post('reason'),
+                    'closeDate'=>$request->post('closeDate'),
                     'totalAmount'=>0,
                     'status'=>0,
-                   // 'baseAmount'=>0,
                 ]);
+
+
                 DB::commit();
                 return redirect()->route('main');
             }
