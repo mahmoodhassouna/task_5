@@ -63,7 +63,11 @@ class AddCashController extends Controller
                 'reason'=> 'required|max:150',
                 'attachFile'=> 'required|mimes:jpg,png,webp,svg,jpeg|max:10000',
                 'wallet_id'=> 'required|exists:wallets,id',
-            ] ,[]
+            ] ,[
+                    'attachFile.required'=>'الصورة مطلوبة',
+                    'attachFile.mimes'=>'صيغة الصورة غير صالحة',
+                    'attachFile.max'=>'حجم الصورة لايتعدى 1 ميجا',
+                ]
             );
 
             if ($validator->fails()) {

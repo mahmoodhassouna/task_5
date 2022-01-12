@@ -20,7 +20,7 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $wallets = Wallet::select('id','walletName')->get();
+        $wallets = Wallet::where('status',1)->select('id','walletName')->get();
         return view('orders.orders',[
             'wallets'=>$wallets,
         ]);

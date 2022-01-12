@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\WithdrawRequest;
 use App\Models\CloseWallet;
 use App\Models\Wallet;
 use App\Models\WithdrawCash;
@@ -18,7 +19,7 @@ class WithdrawCashController extends Controller
      */
     public function index()
     {
-        //
+      //  return 90;
     }
 
     /**
@@ -60,7 +61,11 @@ class WithdrawCashController extends Controller
                 'reason'=> 'required|max:150',
                 'attachFile'=> 'required|mimes:jpg,png,webp,svg,jpeg|max:10000',
                 'wallet_id'=> 'required|exists:wallets,id',
-            ] ,[]
+            ] ,[
+                    'attachFile.required'=>'الصورة مطلوبة',
+                    'attachFile.mimes'=>'صيغة الصورة غير صالحة',
+                    'attachFile.max'=>'حجم الصورة لايتعدى 1 ميجا',
+                ]
             );
 
             if ($validator->fails()) {
@@ -119,22 +124,31 @@ class WithdrawCashController extends Controller
     }
 
 
+
     public function storeWithdrawWithClose(Request $request){
 
         DB::beginTransaction();
         try{
+
             $validator = Validator::make($request->all(), [
                 'withdrawAmount'=> 'required|numeric',
                 'withdrawDate'=> 'required|max:40',
                 'reason'=> 'required|max:150',
                 'attachFile'=> 'required|mimes:jpg,png,webp,svg,jpeg|max:10000',
                 'wallet_id'=> 'required|exists:wallets,id',
-            ] ,[]
+            ] ,[
+                'reason.required'=>'يرجى توضيح الاسباب',
+                'reason.max'=>'يجب اختصار الاسباب في 150 حرف',
+                'attachFile.required'=>'الصورة مطلوبة',
+                'attachFile.mimes'=>'صيغة الصورة غير صالحة',
+                'attachFile.max'=>'حجم الصورة لايتعدى 1 ميجا',
+                ]
             );
 
             if ($validator->fails()) {
 
-               // return redirect()->back();
+              $errors = $validator->errors();
+               return back(307)->withErrors($errors);
 
             } else {
 
@@ -151,12 +165,9 @@ class WithdrawCashController extends Controller
 
                 $wallet = Wallet::where('id', $request->post('wallet_id'))->first();
 
-                if ($request->post('withdrawAmount') > $wallet->highestAmountCanWithdrawn) {
-                      //return redirect()->route('closeWallet');
-
-                }
                 if ($request->post('withdrawAmount') > $wallet->totalAmount) {
-                      //return redirect()->route('closeWallet');
+                    $errors = 'المبلغ اكبر من المبلغ الاجمالي ';
+                    return back(307)->withErrors($errors);
 
                 }
 
@@ -172,11 +183,11 @@ class WithdrawCashController extends Controller
                     $wallet->update([
                         'totalAmount' => $totalAmount,
                         'status' => 0,
-                        'baseAmount' => 0,
+                       // 'baseAmount' => 0,
                     ]);
                     DB::commit();
                     return redirect()->route('main');
-                }
+               }
 
         }catch (Exception $ex){
             DB::rollback();

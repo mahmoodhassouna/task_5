@@ -56,7 +56,7 @@ class WalletController extends Controller
                 $wallet->update([
                     'totalAmount'=>0,
                     'status'=>0,
-                    'baseAmount'=>0,
+                   // 'baseAmount'=>0,
                 ]);
                 DB::commit();
                 return redirect()->route('main');

@@ -22,7 +22,7 @@
             <div class="container-fluid">
 
                 <div class="card card-success">
-
+                    <ul id="display_error"></ul>
                     <div class="card-body">
                         <form id="addCashForm" enctype="multipart/form-data" method="post">
                             @csrf
