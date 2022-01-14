@@ -6,6 +6,7 @@ use App\Http\Controllers\AddCashController;
 use App\Http\Controllers\WithdrawCashController;
 use App\Http\Controllers\DisplayWalletController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\InstallmentController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -63,5 +64,12 @@ Route::middleware(['auth'])->group(function (){
     Route::post('payment/order',[OrderController::class,'paymentOrder'])->name('paymentOrder');
     Route::delete('delete/order/{id}',[OrderController::class,'destroy']);
 
+    Route::get('installments/order/{id}',[InstallmentController::class,'installments'])->name('installmentsOrder');
+    Route::get('installments/data/{id}',[InstallmentController::class,'installmentsData'])->name('installmentsData');
+    Route::get('installments',[InstallmentController::class,'index'])->name('installments');
+    Route::get('installmentSchedulingView',[InstallmentController::class,'installmentSchedulingView'])->name('installmentSchedulingView');
+    Route::get('installmentScheduling',[InstallmentController::class,'installmentScheduling'])->name('installmentScheduling');
+    Route::get('installmentsDue',[InstallmentController::class,'installmentsDue'])->name('installmentsDue');
+    Route::post('installment/data/edit',[InstallmentController::class,'edit'])->name('installmentDataEdit');
 
 });

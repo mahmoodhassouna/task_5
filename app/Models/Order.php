@@ -15,4 +15,9 @@ class Order extends Model
     {
         return $this->belongsTo(Wallet::class);
     }
+
+    public function installments()
+    {
+        return $this->hasMany(Installment::class);
+    }
 }

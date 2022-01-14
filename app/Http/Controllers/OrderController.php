@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Installment;
 use App\Models\Order;
 use App\Models\RejectedOrders;
 use App\Models\Wallet;
+use App\Models\WithdrawAddCash;
 use App\Models\WithdrawCash;
 use http\Env\Response;
 use Illuminate\Http\Request;
@@ -132,21 +134,43 @@ class OrderController extends Controller
                         'msg' => "مبلغ المشروع اكبر من المبلغ الاجمالي للمحفظة ",
                     ]);
                 }
-                if ($order->paymentCase == 1){
+                if ($order->projectAmount <= 0){
+                    return response()->json([
+                        'status' => 000,
+                        'msg' => "يرجى ادخال مبلغ للمشروع",
+                    ]);
+                }
+
+                if ($order->wallet_id != null){
                     return response()->json([
                         'status' => 000,
                         'msg' => "الطلب مدفوع بالفعل ",
                     ]);
                 }
-                $totalAmount = $wallet->totalAmount - $order->projectAmount;
 
-                WithdrawCash::insert([
-                    'withdrawAmount' => $order->projectAmount,
-                    'withdrawDate' => $request->post('date'),
+                $totalAmount = $wallet->totalAmount - $order->projectAmount;
+                $installmentValue = $order->projectAmount / $order->repaymentFinancingAmountMonths;
+                $monthNumber = $order->repaymentFinancingAmountMonths;
+
+
+                for ($i = 1; $i <= $monthNumber; $i++) {
+                    $final = date("Y-m-d", strtotime("+".$i."month"));
+                   Installment::insert([
+                       'installmentDueDate'=>$final,
+                       'installmentAmount'=>$installmentValue,
+                       'installmentStatus'=>'غير مسدد',
+                       'order_id'=>$request->post('order_id'),
+                   ]);
+
+
+                }
+
+                WithdrawAddCash::insert([
+                    'amount' => $order->projectAmount,
+                    'date' => $request->post('date'),
                     'reason' => 'تم سحب المبلغ لتمويل مشروع'.$order->projectName,
                     'attachFile' => 's.png',
                     'wallet_id' => $request->post('wallet_id'),
-
                 ]);
 
                 $order->update([

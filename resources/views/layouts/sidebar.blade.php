@@ -32,6 +32,36 @@
                 </a>
             </li>
 
+            <li class="nav-item has-treeview">
+                <a href="#" class="nav-link">
+                    <i class="nav-icon fas fa-edit"></i>
+                    <p>
+                        الاقساط
+                        <i class="fas fa-angle-left right"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+                    <li class="nav-item">
+                        <a href="{{route('installments')}}" class="nav-link">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>الاقساط المستحقة</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{route('installmentSchedulingView')}}" class="nav-link">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>جدولة الأقساط</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="../forms/editors.html" class="nav-link">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>Editors</p>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
         </ul>
     </nav>
     <!-- /.sidebar-menu -->

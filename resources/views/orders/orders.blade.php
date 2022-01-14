@@ -151,6 +151,47 @@
             </div>
         </div>
 
+
+        <div class="modal fade bd-example-modal-lg" id="InstallmentModal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">الاقساط</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table table-head-fixed">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>تاريخ الاستحقاق</th>
+                                <th>مبلغ القسط</th>
+                                <th> تاريخ الدفع</th>
+                                <th> المبلغ المدفوع </th>
+                                <th>حالة القسط </th>
+
+                            </tr>
+                            </thead>
+                            <tbody id="installments">
+                            <tr>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                            </tr>
+
+                            </tbody>
+                        </table>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
     @stop
 
 

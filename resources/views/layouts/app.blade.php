@@ -268,7 +268,8 @@
     $(document).ready(function () {
         wallets();
         orders();
-
+        installment();
+        installmentScheduling();
 
         function wallets(){
             $.ajax({
@@ -317,18 +318,190 @@
                                        <td>'+item.projectAmount+'</td>\
                                        <td>'+item.repaymentFinancingAmountMonths+'</td>\
                                        <td>'+item.orderDate+'</td>\
-                                       <td >'+(item.orderCase == 'قيد الدراسة' ? '<button class="btn btn-success accept" value="'+item.id+'" >قبول</button> <button type="button" class="btn btn-warning rejected"  value="'+item.id+'" data-whatever="@mdo">رفض</button> ':item.orderCase == 'مقبول' && item.wallet_id == null ? '<button type="button" class="btn btn-info payment_order"  value="'+item.id+'" data-whatever="@mdo">تعين محفظة </button>':'')+'<button class="btn btn-danger deleteOrder" value="'+item.id+'" >حذف</button> '+'</td>\
+                                       <td >'+(item.orderCase == 'قيد الدراسة' ? '<button class="btn btn-success accept" value="'+item.id+'" >قبول</button> <button type="button" class="btn btn-warning rejected"  value="'+item.id+'" data-whatever="@mdo">رفض</button> ':item.orderCase == 'مقبول' && item.wallet_id == null ? '<button type="button" class="btn btn-info payment_order"  value="'+item.id+'" data-whatever="@mdo">تعين محفظة </button>':item.orderCase == 'مقبول' && item.wallet_id != null ? '<button class="btn btn-secondary displayInstallment" value="'+item.id+'" >عرض الاقساط</button>':'')+'<button class="btn btn-danger deleteOrder" value="'+item.id+'" >حذف</button> '+'</td>\
                                           </tr>');
                     });
                 }
             });
         }
 
-        $(document).on('click', '.deleteWallet', function () {
-            var wallet_id = $(this).val();
-            $('#exampleModal').modal('show');
-            $('#wallet_id').val(wallet_id);
+        function installment(){
+            $.ajax({
+                type:"GET",
+                url:"{{route('installmentsDue')}}",
+                dataType:"json",
+                success: function (response) {
+                    $('#installmentsDue').html("");
+                    $.each(response.installmentsDue ,function (key ,item) {
+                        $('#installmentsDue').append('<tr>\
+                                       <td>'+item.id+'</td>\
+                                       <td>'+item.order.beneficiaryName+'</td>\
+                                       <td>'+item.order.projectName+'</td>\
+                                       <td>'+item.installmentDueDate+'</td>\
+                                       <td>'+item.installmentAmount+'</td>\
+                                       <td>'+(item.paymentDate == null ? 'غير مدفوع':item.amountPaid)+'</td>\
+                                       <td>'+item.amountPaid+'</td>\
+                                       <td>'+(item.installmentStatus == 'غير مسدد' ? '<span class="badge bg-danger">غير مسدد</span>':item.installmentStatus == 'مسدد' ? '<span class="badge bg-success">مسدد</span>':'<span class="badge bg-warning">مسدد جزئي</span>')+'</td>\
+                                          </tr>');
+                    });
+                }
+            });
+        }
+
+        function installmentScheduling(){
+            $.ajax({
+                type:"GET",
+                url:"{{route('installmentScheduling')}}",
+                dataType:"json",
+                success: function (response) {
+                    $('#installmentScheduling').html("");
+                    $.each(response.installmentScheduling ,function (key ,item) {
+                        $('#installmentScheduling').append('<tr>\
+                                       <td>'+item.id+'</td>\
+                                       <td>'+item.installmentDueDate+'</td>\
+                                       <td>'+item.installmentAmount+'</td>\
+                                       <td>'+(item.installmentStatus == 'غير مسدد' ? '<span class="badge bg-danger">غير مسدد</span>':item.installmentStatus == 'مسدد' ? '<span class="badge bg-success">مسدد</span>':'<span class="badge bg-warning">مسدد جزئي</span>')+'</td>\
+                                       <td><button type="button" class="btn btn-secondary installmentScheduling"  value="'+item.id+'" data-whatever="@mdo">اعادة جدولة القسط</button></td>\
+                                          </tr>');
+                    });
+                }
+            });
+        }
+
+
+
+        function installments(order_id){
+
+            $.ajax({
+                type:"GET",
+                url:"installments/order/"+order_id,
+                dataType:"json",
+                success: function (response) {
+                    //console.log(response.data)
+                    $('#installments').html("");
+                    $.each(response.installments ,function (key ,item) {
+                        $('#installments').append('<tr>\
+                                       <td>'+item.id+'</td>\
+                                       <td>'+item.installmentDueDate+'</td>\
+                                       <td>'+item.installmentAmount+'</td>\
+                                       <td>'+(item.paymentDate == null ? 'غير مدفوع':item.amountPaid)+'</td>\
+                                       <td>'+item.amountPaid+'</td>\
+                                       <td>'+(item.installmentStatus == 'غير مسدد' ? '<span class="badge bg-danger">غير مسدد</span>':item.installmentStatus == 'مسدد' ? '<span class="badge bg-success">مسدد</span>':'<span class="badge bg-warning">مسدد جزئي</span>')+'</td>\
+                                          </tr>');
+                    });
+                }
+            });
+        }
+
+        function installmentsData(installment_id){
+
+            $.ajax({
+                type:"GET",
+                url:"installments/data/"+installment_id,
+                dataType:"json",
+                success: function (response) {
+                      $('#installmentAmount').val(response.installmentData.installmentAmount);
+                      $('#installment_id').val(response.installmentData.id);
+                      $('#orderr_id').val(response.installmentData.order_id);
+                    //  $('#').val(response.installmentData.installmentDueDate);
+                }
+            });
+        }
+
+        $(document).on('click', '.displayInstallment', function () {
+            var order_id = $(this).val();
+            installments(order_id);
+            $('#InstallmentModal').modal('show');
+
         });
+
+        $(document).on('click', '.installmentScheduling', function () {
+            var installment_id = $(this).val();
+            installmentsData(installment_id);
+            $('#installmentSchedulingModal').modal('show');
+
+        });
+
+        $("#installmentsSech").validate({
+            rules: {
+                installmentAmount: {
+                    required: false,
+                    number: true,
+                    rangelength: [0, 20],
+
+                }
+            },
+            messages: {
+                installmentAmount: {
+                    rangelength: "قيمة غير صالحة ",
+                  //  required: "المبلغ القسط مطلوب",
+                    number: "يرجى ادخال ارقام فقط"
+                }
+
+            },submitHandler: function(form) {
+
+                var formData = new FormData($('#installmentsSech')[0]);
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+                $.ajax({
+                    type: 'post',
+                    url: "{{route('installmentDataEdit')}}",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    cache: false,
+                    success: function (data) {
+                        $('#installmentSchedulingModal').modal('hide');
+
+                        if (data.status == 400) {
+                            Swal.fire({
+                                position: 'top-end',
+                                icon: 'error',
+                                title: data.msg,
+                                showConfirmButton: false,
+                                timer: 1500
+                            })
+                        }
+                        else if(data.status == 200){
+                            installmentScheduling();
+                            $('#installmentSchedulingModal').modal('hide');
+                            Swal.fire({
+                                position: 'top-end',
+                                icon: 'success',
+                                title: data.msg,
+                                showConfirmButton: false,
+                                timer: 1500
+                            })
+                            // $('#additionAmount').val('');
+                            // $('#reason').val('');
+                            // $('#attachFile').val('');
+                            // $('#display_error').hide();
+                        }else {
+                            $('#installmentSchedulingModal').modal('hide');
+
+                            Swal.fire({
+                                position: 'top-end',
+                                icon: 'error',
+                                title: data.msg,
+                                showConfirmButton: false,
+                                timer: 1500
+                            })
+                        }
+                    }
+
+
+                });
+
+            }
+
+
+
+
+        });
+
 
         $("#addWallet").validate({
             rules: {
