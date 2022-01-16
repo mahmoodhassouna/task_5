@@ -10,6 +10,7 @@
                         <ol class="breadcrumb float-sm-right">
                             <li class="breadcrumb-item"><a href="#">Home</a></li>
                             <li class="breadcrumb-item active">Dashboard v1</li>
+
                         </ol>
                     </div><!-- /.col -->
                 </div><!-- /.row -->
@@ -63,6 +64,73 @@
                                         <td></td>
                                         <td></td>
                                         <td></td>
+                                    </tr>
+
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.card-body -->
+                        </div>
+                        <!-- /.card -->
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+
+                            <!-- /.card-header -->
+                            <div  class="card-body table-responsive p-0" style="height: 300px;">
+                                <table class="table table-head-fixed">
+                                    <thead>
+
+                                    <tr>
+                                        <form id="installmentsSearchForm" method="post">
+                                        <th>
+                                            <div class="col">
+                                                <label>اسم المستفيد</label>
+                                                <input name="beneficiaryName" class="form-control form-control-lg">
+                                            </div>
+
+
+                                        </th>
+                                        <th>
+                                            <div class="col">
+                                                <label>اسم المشروع</label>
+                                                <input name="projectName" class="form-control form-control-lg">
+                                            </div>
+
+                                           </th>
+
+                                        <th></th>
+                                        <th>
+                                            <div class="col">
+                                                <label>تاريخ الاستحقاق من</label>
+                                                <input name="dateFrom" type="date" class="form-control form-control-lg">
+                                            </div>
+
+                                        </th>
+
+                                        <th> </th>
+
+                                        <th>
+                                            <div class="col">
+                                                <label>تاريخ الاستحقاق الى</label>
+                                                <input name="dateTo" type="date" class="form-control form-control-lg">
+                                            </div>
+                                        </th>
+                                            <th>
+                                            <div class="col">
+                                                <button  class="btn btn-info">بحث</button>
+                                            </div>
+                                           </th>
+                                        </form>
+                                    </tr>
+
+                                    </thead>
+                                    <tbody id="installmentsSerch">
+                                    <tr>
+
                                     </tr>
 
                                     </tbody>

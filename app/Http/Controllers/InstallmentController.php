@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Installment;
+use App\Models\Wallet;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use PhpParser\Builder;
 
 class InstallmentController extends Controller
 {
@@ -17,6 +20,146 @@ class InstallmentController extends Controller
     public function index()
     {
         return view('installments.installments');
+    }
+
+    public function insPyments(){
+        $wallets = Wallet::where('status',1)->get();
+        return view('installments.payments',compact('wallets'));
+    }
+
+    public function Payment(Request $request)
+    {
+        DB::beginTransaction();
+        try{
+            $validator = Validator::make($request->all(), [
+
+                'installment_id'=> 'required|exists:installments,id',
+                'wallet_id'=> 'required|exists:wallets,id',
+                'paymentDate'=> 'required|date',
+                'amountPaid'=> 'required|numeric',
+            ] ,[]
+            );
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 400,
+                    'errors' => $validator->messages()
+                ]);
+            } else {
+                 $ins = Installment::find($request->installment_id);
+
+               if ($request->amountPaid > ($ins->installmentAmount - $ins->amountPaid)){
+                   return response()->json([
+                       'status'=>000,
+                       'msg'=>'قيمة الدفعة اكبر من قيمة القسط'
+                   ]);
+               }
+
+                $amountPaid = $request->amountPaid + $ins->amountPaid;
+                $amount =   $ins->installmentAmount - $amountPaid;
+                $ins->update([
+                    'amountPaid'=>$amountPaid,
+                    'paymentDate'=>$request->paymentDate,
+                    'installmentStatus'=>($amount < 0.009 ? 'مسدد':'مسدد جزئي'),
+                ]);
+
+                $wallet = Wallet::find($request->wallet_id);
+                $total = $wallet->totalAmount + $request->amountPaid;
+                $wallet->update([
+                    'totalAmount'=>$total,
+                ]);
+                DB::commit();
+                return response()->json([
+                    'status'=>200,
+                    'msg'=>'تم الدفع  بنجاح'
+                ]);
+            }
+
+        }catch (Exception $ex){
+            DB::rollback();
+            return response()->json([
+                'status' => 401,
+                'msg' => 'فشلت عملية الدفع حاول فيما بعد',
+            ]);
+        }
+
+    }
+
+    public function search(Request $request)
+    {
+        $array1 = [];
+        $array2 = [];
+        if(isset($request->projectName)){
+            $array1 += ['projectName'=>$request->projectName];
+        }
+
+        if(isset($request->beneficiaryName)){
+            $array1 += ['beneficiaryName'=>$request->beneficiaryName];
+        }
+
+        //$array2+=['installmentStatus','غير مسدد'];
+
+
+        if(isset($request->dateFrom)){
+            $array2 += ['installmentDueDate','>=',$request->dateFrom];
+        }
+
+
+
+
+//Lead::whereBetween('created_at', [date('Y-m-d', strtotime($input['from'])), date('Y-m-d', strtotime($input['to']))])->get();
+        if(!isset($request->dateTo) && !isset($request->dateFrom)){
+            $ins = Installment::with('order')->whereMonth('installmentDueDate',Carbon::now()->month)->where('installmentStatus','غير مسدد')->whereHas('order',function($q) use ($array1) {
+                $q->where($array1);
+            })->get();
+
+            return response()->json([
+                'data'=>$ins,
+                'status'=>200
+            ]);
+        }else if(isset($request->dateTo))
+        {
+            $ins = Installment::with('order')
+                ->whereMonth('installmentDueDate',Carbon::now()->month)
+                ->where('installmentStatus','غير مسدد')
+                ->where('installmentDueDate','<=',$request->dateTo)
+                ->whereHas('order',function($q) use ($array1) {
+                $q->where($array1);
+            })->get();
+
+            return response()->json([
+                'data'=>$ins,
+                'status'=>200
+            ]);
+        }else if(isset($request->dateFrom))
+        {
+            $ins = Installment::with('order')
+                ->where('installmentStatus','غير مسدد')
+                ->where('installmentDueDate','>=',$request->dateFrom)
+                ->whereHas('order',function($q) use ($array1) {
+                    $q->where($array1);
+                })->get();
+
+            return response()->json([
+                'data'=>$ins,
+                'status'=>200
+            ]);
+        }else{
+            $ins = Installment::with('order')
+                ->whereMonth('installmentDueDate',Carbon::now()->month)
+                ->where('installmentStatus','غير مسدد')
+                ->where('installmentDueDate','<=',$request->dateTo)
+                ->where('installmentDueDate','>=',$request->dateFrom)
+                ->whereHas('order',function($q) use ($array1) {
+                    $q->where($array1);
+                })->get();
+
+            return response()->json([
+                'data'=>$ins,
+                'status'=>200
+            ]);
+        }
+
     }
 
     public function installments($order_id)
@@ -45,6 +188,14 @@ class InstallmentController extends Controller
         $installments = Installment::where('installmentStatus','غير مسدد')->get();
         return response()->json([
             'installmentScheduling'=>$installments
+        ]);
+    }
+
+    public function installmentsPayment()
+    {
+        $installments = Installment::with('order')->where('installmentStatus','!=','مسدد')->get();
+        return response()->json([
+            'installmentPayments'=>$installments
         ]);
     }
 
@@ -100,142 +251,146 @@ class InstallmentController extends Controller
         DB::beginTransaction();
 
         try{
+            $validator = Validator::make($request->all(), [
 
-            $totalAmount = 0;
-            $installment= Installment::select('installmentAmount')->where('order_id',$request->orderr_id)->where('id','>=',$request->installment_id)->get();
-            $ins = Installment::find($request->installment_id);
-            $ins2= Installment::where('order_id',$request->orderr_id)->where('id','>',$ins->id)->get();
-            $time = strtotime($request->post('newData'));
+                'installment_id'=> 'required|exists:installments,id',
+                'orderr_id'=> 'required|exists:orders,id',
+                'installmentAmount'=> 'nullable|numeric',
+                'newData'=> 'nullable|date',
+            ] ,[]
+            );
 
-           if(isset($request->newData) && isset($request->installmentAmount))
-           {
-               if($request->newData <= Carbon::now()){
-                   return response()->json([
-                       'err'=>'التاريخ غير صالح'
-                   ]);
-               }
-
-               foreach ($installment as $item)
-               {
-                   $totalAmount+=$item->installmentAmount;
-               }
-               if($request->installmentAmount > $totalAmount)
-               {
-                   return response()->json([
-                       'status'=>400,
-                       'msg'=>'قيمة القسط اكبر من المبلغ المتبقي عليك',
-                   ]);
-               }
-
-               $totalAmount -= $request->installmentAmount;
-
-               $ins->update(['installmentAmount'=>$request->installmentAmount,
-                   'installmentDueDate'=>$request->newData
-               ]);
-
-               $totalAmount = $totalAmount / $ins2->count();
-
-               if($totalAmount <= 0)
-               {
-                   Installment::where('order_id',$request->orderr_id)->where('id','>',$ins->id)->delete();
-               }
-
-               foreach ($ins2 as $key =>$t)
-               {
-                   $key+=1;
-                   $final = date("Y-m-d", strtotime("+".$key."month",$time));
-                   $t->installmentDueDate = $final;
-                   $t->installmentAmount = $totalAmount;
-                   $t->save();
-
-               }
-               DB::commit();
-               return response()->json([
-                   'status'=>200,
-                   'msg'=>'تم اعادة جدولة الاقساط بنجاح'
-               ]);
-
-           }
-           else if(isset($request->newData))
-           {
-
-               if($request->newData <= Carbon::now())
-               {
-                   return response()->json([
-                       'err'=>'التاريخ غير صالح'
-                   ]);
-               }
-
-               $ins->update([
-                   'installmentDueDate'=>$request->newData
-               ]);
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 400,
+                    'errors' => $validator->messages()
+                ]);
+            }else {
 
 
-               foreach ($ins2 as $key =>$t){
-                   $key+=1;
-                   $final = date("Y-m-d", strtotime("+".$key."month",$time));
-                   $t->installmentDueDate = $final;
-                   $t->save();
+                $totalAmount = 0;
+                $installment = Installment::select('installmentAmount')->where('order_id', $request->orderr_id)->where('id', '>=', $request->installment_id)->get();
+                $ins = Installment::find($request->installment_id);
+                $ins2 = Installment::where('order_id', $request->orderr_id)->where('id', '>', $ins->id)->get();
+                $time = strtotime($request->post('newData'));
 
-               }
+                if (isset($request->newData) && isset($request->installmentAmount)) {
+                    if ($request->newData <= Carbon::now()) {
+                        return response()->json([
+                            'err' => 'التاريخ غير صالح'
+                        ]);
+                    }
 
-               DB::commit();
-               return response()->json([
-                   'status'=>200,
-                   'msg'=>'تم اعادة جدولة الاقساط بنجاح'
-               ]);
+                    foreach ($installment as $item) {
+                        $totalAmount += $item->installmentAmount;
+                    }
+                    if ($request->installmentAmount > $totalAmount) {
+                        return response()->json([
+                            'status' => 400,
+                            'msg' => 'قيمة القسط اكبر من المبلغ المتبقي عليك',
+                        ]);
+                    }
 
+                    $totalAmount -= $request->installmentAmount;
 
-           }
-           else if(isset($request->installmentAmount))
-           {
+                    $ins->update(['installmentAmount' => $request->installmentAmount,
+                        'installmentDueDate' => $request->newData
+                    ]);
 
-               foreach ($installment as $item)
-               {
-                   $totalAmount+=$item->installmentAmount;
-               }
+                    $totalAmount = $totalAmount / $ins2->count();
+                    $totalAmount = number_format($totalAmount, 2, '.', '');
+                    if ($totalAmount <= 0) {
+                        Installment::where('order_id', $request->orderr_id)->where('id', '>', $ins->id)->delete();
+                    }
 
+                    foreach ($ins2 as $key => $t) {
+                        $key += 1;
+                        $final = date("Y-m-d", strtotime("+" . $key . "month", $time));
+                        $t->installmentDueDate = $final;
+                        $t->installmentAmount = $totalAmount;
+                        $t->save();
 
-               if($request->installmentAmount > $totalAmount){
+                    }
+                    DB::commit();
+                    return response()->json([
+                        'status' => 200,
+                        'msg' => 'تم اعادة جدولة الاقساط بنجاح'
+                    ]);
 
-                   return response()->json([
-                       'status'=>400,
-                       'msg'=>'قيمة القسط اكبر من المبلغ المتبقي عليك',
-                   ]);
-               }
+                } else if (isset($request->newData)) {
 
-               $totalAmount -= $request->installmentAmount;
+                    if ($request->newData <= Carbon::now()) {
+                        return response()->json([
+                            'err' => 'التاريخ غير صالح'
+                        ]);
+                    }
 
-               $ins->update(['installmentAmount'=>$request->installmentAmount]);
-
-               $totalAmount = $totalAmount / $ins2->count();
-
-               // return $totalAmount;
-               if($totalAmount <= 0){
-                   Installment::where('order_id',$request->orderr_id)->where('id','>',$ins->id)->delete();
-               }
-
-               foreach ($ins2 as $t){
-                   $t->installmentAmount = $totalAmount;
-                   $t->save();
-               }
-
-
-
-               DB::commit();
-               return response()->json([
-                   'status'=>200,
-                   'msg'=>'تم اعادة جدولة الاقساط بنجاح'
-               ]);
-           }
-           else{
-               return response()->json([
-                   'status'=>400,
-                   'msg'=>'قم بادخال بيانات لاعادة الجدولة'
-               ]);
-           }
+                    $ins->update([
+                        'installmentDueDate' => $request->newData
+                    ]);
 
 
+                    foreach ($ins2 as $key => $t) {
+                        $key += 1;
+                        $final = date("Y-m-d", strtotime("+" . $key . "month", $time));
+                        $t->installmentDueDate = $final;
+                        $t->save();
+
+                    }
+
+                    DB::commit();
+                    return response()->json([
+                        'status' => 200,
+                        'msg' => 'تم اعادة جدولة الاقساط بنجاح'
+                    ]);
+
+
+                } else if (isset($request->installmentAmount)) {
+
+                    foreach ($installment as $item) {
+                        $totalAmount += $item->installmentAmount;
+                    }
+
+
+                    if ($request->installmentAmount > $totalAmount) {
+
+                        return response()->json([
+                            'status' => 400,
+                            'msg' => 'قيمة القسط اكبر من المبلغ المتبقي عليك',
+                        ]);
+                    }
+
+                    $totalAmount -= $request->installmentAmount;
+
+                    $ins->update(['installmentAmount' => $request->installmentAmount]);
+
+                    $totalAmount = $totalAmount / $ins2->count();
+                    $totalAmount = number_format($totalAmount, 2, '.', '');
+
+                    // return $totalAmount;
+                    if ($totalAmount <= 0) {
+                        Installment::where('order_id', $request->orderr_id)->where('id', '>', $ins->id)->delete();
+                    }
+
+                    foreach ($ins2 as $t) {
+                        $t->installmentAmount = $totalAmount;
+                        $t->save();
+                    }
+
+
+                    DB::commit();
+                    return response()->json([
+                        'status' => 200,
+                        'msg' => 'تم اعادة جدولة الاقساط بنجاح'
+                    ]);
+                } else {
+                    return response()->json([
+                        'status' => 400,
+                        'msg' => 'قم بادخال بيانات لاعادة الجدولة'
+                    ]);
+                }
+
+            }
         }catch (Exception $ex){
 
             DB::rollback();

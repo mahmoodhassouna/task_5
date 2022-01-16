@@ -72,4 +72,9 @@ Route::middleware(['auth'])->group(function (){
     Route::get('installmentsDue',[InstallmentController::class,'installmentsDue'])->name('installmentsDue');
     Route::post('installment/data/edit',[InstallmentController::class,'edit'])->name('installmentDataEdit');
 
+    Route::post('installment/search',[InstallmentController::class,'search'])->name('installmentSearch');
+    Route::get('insPyments',[InstallmentController::class,'insPyments'])->name('insPyments');
+    Route::get('installmentsPayment',[InstallmentController::class,'installmentsPayment'])->name('installmentsPayment');
+    Route::post('installment/payment',[InstallmentController::class,'Payment'])->name('installmentPayment');
+
 });

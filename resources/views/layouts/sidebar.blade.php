@@ -54,9 +54,9 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="../forms/editors.html" class="nav-link">
+                        <a href="{{route('insPyments')}}" class="nav-link">
                             <i class="far fa-circle nav-icon"></i>
-                            <p>Editors</p>
+                            <p>تسديد الاقساط</p>
                         </a>
                     </li>
                 </ul>

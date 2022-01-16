@@ -266,9 +266,11 @@
 
 
     $(document).ready(function () {
+
         wallets();
         orders();
         installment();
+        installmentPayments();
         installmentScheduling();
 
         function wallets(){
@@ -335,8 +337,8 @@
                     $.each(response.installmentsDue ,function (key ,item) {
                         $('#installmentsDue').append('<tr>\
                                        <td>'+item.id+'</td>\
+                                        <td>'+item.order.projectName+'</td>\
                                        <td>'+item.order.beneficiaryName+'</td>\
-                                       <td>'+item.order.projectName+'</td>\
                                        <td>'+item.installmentDueDate+'</td>\
                                        <td>'+item.installmentAmount+'</td>\
                                        <td>'+(item.paymentDate == null ? 'غير مدفوع':item.amountPaid)+'</td>\
@@ -368,7 +370,29 @@
             });
         }
 
-
+        function installmentPayments(){
+            $.ajax({
+                type:"GET",
+                url:"{{route('installmentsPayment')}}",
+                dataType:"json",
+                success: function (response) {
+                    $('#insPyments').html("");
+                    $.each(response.installmentPayments ,function (key ,item) {
+                        $('#insPyments').append('<tr>\
+                                       <td>'+item.id+'</td>\
+                                       <td>'+item.order.projectName+'</td>\
+                                       <td>'+item.order.beneficiaryName+'</td>\
+                                       <td>'+item.installmentDueDate+'</td>\
+                                       <td>'+item.installmentAmount+'</td>\
+                                       <td>'+(item.paymentDate == null ? 'غير مدفوع':item.paymentDate)+'</td>\
+                                       <td>'+item.amountPaid+'</td>\
+                                       <td>'+(item.installmentStatus == 'غير مسدد' ? '<span class="badge bg-danger">غير مسدد</span>':item.installmentStatus == 'مسدد' ? '<span class="badge bg-success">مسدد</span>':'<span class="badge bg-warning">مسدد جزئي</span>')+'</td>\
+                                       <td><button type="button" class="btn btn-success installmentPayments"  value="'+item.id+'" data-whatever="@mdo">دفع القسط</button></td>\
+                                          </tr>');
+                    });
+                }
+            });
+        }
 
         function installments(order_id){
 
@@ -401,6 +425,7 @@
                 dataType:"json",
                 success: function (response) {
                       $('#installmentAmount').val(response.installmentData.installmentAmount);
+                      $('#installmentAmount2').val(response.installmentData.installmentAmount);
                       $('#installment_id').val(response.installmentData.id);
                       $('#orderr_id').val(response.installmentData.order_id);
                     //  $('#').val(response.installmentData.installmentDueDate);
@@ -422,6 +447,13 @@
 
         });
 
+        $(document).on('click', '.installmentPayments', function () {
+            var installment_id = $(this).val();
+            installmentsData(installment_id);
+            $('#installmentPaymentsModal').modal('show');
+
+        });
+
         $("#installmentsSech").validate({
             rules: {
                 installmentAmount: {
@@ -435,7 +467,7 @@
                 installmentAmount: {
                     rangelength: "قيمة غير صالحة ",
                   //  required: "المبلغ القسط مطلوب",
-                    number: "يرجى ادخال ارقام فقط"
+                   number: "يرجى ادخال ارقام فقط"
                 }
 
             },submitHandler: function(form) {
@@ -454,16 +486,13 @@
                     contentType: false,
                     cache: false,
                     success: function (data) {
-                        $('#installmentSchedulingModal').modal('hide');
 
                         if (data.status == 400) {
-                            Swal.fire({
-                                position: 'top-end',
-                                icon: 'error',
-                                title: data.msg,
-                                showConfirmButton: false,
-                                timer: 1500
-                            })
+                            $('#display_error').html("");
+                            $('#display_error').addClass('alert alert-danger');
+                            $.each(data.errors, function (key, err_value) {
+                                $('#display_error').append('<li >' + err_value + '</li>');
+                            });
                         }
                         else if(data.status == 200){
                             installmentScheduling();
@@ -501,7 +530,6 @@
 
 
         });
-
 
         $("#addWallet").validate({
             rules: {
@@ -691,6 +719,102 @@
                             $('#display_error').hide();
                         }else {
                             location.reload();
+                            Swal.fire({
+                                position: 'top-end',
+                                icon: 'error',
+                                title: data.msg,
+                                showConfirmButton: false,
+                                timer: 1500
+                            })
+                        }
+                    }
+
+
+                });
+
+            }
+
+
+
+
+        });
+
+        $("#installmentsPaymentsForm").validate({
+            rules: {
+                installmentAmount2: {
+                    required: true,
+                    number: true,
+                    rangelength: [0, 20],
+
+                }, amountPaid: {
+                    required: true,
+                    number: true,
+                    rangelength: [0, 20],
+
+                },paymentDate: {
+                    required: true,
+
+                },wallet_id: {
+                    required: true,
+                },
+            },
+            messages: {
+                installmentAmount2: {
+                    rangelength: "قيمة غير صالحة ",
+                    required: "المبلغ  مطلوب",
+                    number: "يرجى ادخال ارقام فقط"
+                } ,
+                amountPaid: {
+                    rangelength: "قيمة غير صالحة ",
+                    required: "المبلغ  مطلوب",
+                    number: "يرجى ادخال ارقام فقط"
+                } ,
+                paymentDate: {
+                    required: "يرجى ادخال التاريخ ",
+                } , wallet_id: {
+                    required: "يرجى اختيار محفظة ",
+                } ,
+
+
+            },submitHandler: function(form) {
+
+                var formData = new FormData($('#installmentsPaymentsForm')[0]);
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+                $.ajax({
+                    type: 'post',
+                    url: "{{route('installmentPayment')}}",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    cache: false,
+                    success: function (data) {
+                        if (data.status == 400) {
+                            $('#display_error').html("");
+                            $('#display_error').addClass('alert alert-danger');
+                            $.each(data.errors, function (key, err_value) {
+                                $('#display_error').append('<li >' + err_value + '</li>');
+                            });
+                        }
+                        else if(data.status == 200){
+                            installmentPayments();
+                            $('#installmentPaymentsModal').modal('hide');
+                            Swal.fire({
+                                position: 'top-end',
+                                icon: 'success',
+                                title: data.msg,
+                                showConfirmButton: false,
+                                timer: 1500
+                            })
+
+                            $('#amountPaid').val('');
+                            $('#wallet_id').val('');
+                            $('#display_error').hide();
+                        }else {
+                         //   location.reload();
                             Swal.fire({
                                 position: 'top-end',
                                 icon: 'error',
@@ -940,6 +1064,143 @@
                                 timer: 1500
                             })
                         }
+                    }
+
+
+                });
+
+            }
+
+
+
+
+        });
+
+        $("#installmentsSearchForm").validate({
+            rules: {
+                // idNumber: {
+                //     required: true,
+                //     digits: true,
+                //     rangelength: [9, 9],
+                //
+                // }, projectType: {
+                //     required: true,
+                // },
+                // phone: {
+                //     required: true,
+                //     digits: true,
+                //     rangelength: [7, 10],
+                //
+                // },projectAmount: {
+                //     required: true,
+                //     number: true,
+                //     rangelength: [0, 20],
+                //
+                // },expectedProfit: {
+                //     required: true,
+                //     number: true,
+                //     rangelength: [0, 20],
+                //
+                // },repaymentFinancingAmountMonths: {
+                //     required: true,
+                //     rangelength: [0, 40],
+                //
+                // },
+                // orderDate: {
+                //     required: true,
+                // },projectType: {
+                //     required: true,
+                // },
+                // projectName: {
+                //     required: true,
+                //     maxlength: 40,
+                //     //  string: true,
+                // },
+                // beneficiaryName: {
+                //     required: true,
+                //     maxlength: 40,
+                //     //  string: true,
+                // }
+            },
+            messages: {
+                // idNumber: {
+                //     rangelength: "قيمة غير صالحة ",
+                //     required: "رقم الهوية مطلوب",
+                //     digits: "يرجى ادخال ارقام فقط"
+                // } ,  projectType: {
+                //     required: "يرجى اختيار نوع المشروع",
+                // } ,
+                // phone: {
+                //     rangelength: "قيمة غير صالحة ",
+                //     required: "رقم الجوال مطلوب",
+                //     digits: "يرجى ادخال ارقام فقط"
+                // } ,
+                // projectAmount: {
+                //     rangelength: "قيمة غير صالحة ",
+                //     required: "مبلغ المشروع مطلوب",
+                //     number: "يرجى ادخال ارقام فقط"
+                // } ,
+                // expectedProfit: {
+                //     rangelength: "قيمة غير صالحة ",
+                //     required: "مبلغ الربح المتوقع مطلوب",
+                //     number: "يرجى ادخال ارقام فقط"
+                // } ,
+                // repaymentFinancingAmountMonths: {
+                //     required: "مدة تسديد مبلغ التمويل مطلوب",
+                //     rangelength: "قيمة غير صالحة ",
+                // }, projectName: {
+                //     required: "اسم المشروع مطلوب",
+                //     rangelength: "قيمة غير صالحة ",
+                // },beneficiaryName: {
+                //     required: "اسم المستفيد مطلوب",
+                //     rangelength: "قيمة غير صالحة ",
+                // },
+                // orderDate: {
+                //     required: "تاريخ الطلب مطلوب",
+                //
+                // }
+
+            },submitHandler: function(form) {
+
+                var formData = new FormData($('#installmentsSearchForm')[0]);
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+                $.ajax({
+                    type: 'post',
+                    url: "{{route('installmentSearch')}}",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    cache: false,
+                    success: function (data) {
+
+                         if(data.status == 200){
+
+                             $('#installmentsSerch').html("");
+                             $.each(data.data ,function (key ,item) {
+                                 $('#installmentsSerch').append('<tr>\
+                                       <td>'+item.id+'</td>\
+                                       <td>'+item.order.beneficiaryName+'</td>\
+                                       <td>'+item.order.projectName+'</td>\
+                                       <td>'+item.installmentDueDate+'</td>\
+                                       <td>'+item.installmentAmount+'</td>\
+                                       <td>'+(item.paymentDate == null ? 'غير مدفوع':item.amountPaid)+'</td>\
+                                       <td>'+(item.installmentStatus == 'غير مسدد' ? '<span class="badge bg-danger">غير مسدد</span>':'')+'</td>\
+                                          </tr>');
+                             });
+
+                        }else {
+                             Swal.fire({
+                                 position: 'top-end',
+                                 icon: 'error',
+                                 title: "يرجى تعبئة مدخل واحد ع الاقل",
+                                 showConfirmButton: false,
+                                 timer: 1500
+                             })
+                         }
                     }
 
 

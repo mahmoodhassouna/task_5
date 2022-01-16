@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class AddCashController extends Controller
 {
+    //mahmoud hassouna
     /**
      * Display a listing of the resource.
      *

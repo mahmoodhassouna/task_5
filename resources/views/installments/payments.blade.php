@@ -4,12 +4,13 @@
             <div class="container-fluid">
                 <div class="row mb-2">
                     <div class="col-sm-6">
-                        <h1 class="m-0 text-dark">جدولة الاقساط الغير مسددة</h1>
+                        <h1 class="m-0 text-dark">تسديد الاقساط</h1>
                     </div><!-- /.col -->
                     <div class="col-sm-6">
                         <ol class="breadcrumb float-sm-right">
                             <li class="breadcrumb-item"><a href="#">Home</a></li>
                             <li class="breadcrumb-item active">Dashboard v1</li>
+
                         </ol>
                     </div><!-- /.col -->
                 </div><!-- /.row -->
@@ -43,26 +44,17 @@
                                     <thead>
                                     <tr>
                                         <th>#</th>
-
+                                        <th>اسم المشروع</th>
+                                        <th> اسم المستفيد</th>
                                         <th>تاريخ الاستحقاق</th>
                                         <th>مبلغ القسط</th>
+                                        <th> تاريخ الدفع</th>
+                                        <th> المبلغ المدفوع </th>
                                         <th>حالة القسط </th>
                                         <th>العمليات </th>
-
                                     </tr>
                                     </thead>
-                                    <tbody id="installmentScheduling">
-                                    <tr>
-
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td> لا يوجد اقساط </td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
+                                    <tbody id="insPyments">
 
                                     </tbody>
                                 </table>
@@ -72,40 +64,58 @@
                         <!-- /.card -->
                     </div>
                 </div>
+
+
                 <!-- /.row -->
             </div>
         </section>
 
-
-        <div class="modal fade" id="installmentSchedulingModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal fade" id="installmentPaymentsModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">جدولة الاقساط</h5>
+                        <h5 class="modal-title" id="exampleModalLabel">دفع قيمة القسط</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
                         <ul id="display_error"></ul>
-                        <form id="installmentsSech"  method="post">
+                        <form id="installmentsPaymentsForm"  method="post">
                             @csrf
                             <input type="hidden" name="installment_id" id="installment_id">
-                            <input type="hidden" name="orderr_id" id="orderr_id">
 
                             <div class="form-group">
                                 <label for="message-text" class="col-form-label">مبلغ القسط </label>
-                                <input class="form-control form-control-lg"  value="" name="installmentAmount" id="installmentAmount" type="text" placeholder="0">
+                                <input class="form-control form-control-lg" readonly  value="" name="installmentAmount2" id="installmentAmount2" type="text" placeholder="0">
 
                             </div>
                             <div class="form-group">
-                                <label for="message-text" class="col-form-label">تاريخ القسط</label>
-                                <input class="form-control form-control-lg"  value="" name="newData" id="newData" type="date" placeholder="0">
+                                <label for="message-text" class="col-form-label">التاريخ</label>
+                                <input class="form-control form-control-lg" readonly  value="{{date('d-m-Y')}}" name="paymentDate" id="paymentDate" type="text" placeholder="0">
+
+                            </div>
+                            <div class="form-group">
+                                <label for="message-text" class="col-form-label"> قيمة الدفعة </label>
+                                <input class="form-control form-control-lg"   value="" name="amountPaid" id="amountPaid" type="text" placeholder="0">
 
                             </div>
 
+                            <div class="form-group form-group-lg">
+                                <label>المحفظة</label>
+                                <select name="wallet_id" class="form-control select2" style="width: 100%;">
+                                    <option selected="selected " disabled>-- اختر المحفظة --</option>
+                                     @isset($wallets)
+                                         @foreach($wallets as $item)
+                                    <option value="{{$item->id}}">{{$item->walletName}}</option>
+                                        @endforeach
+                                    @endisset
+
+                                </select>
+                            </div>
+
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-info">حفظ</button>
+                                <button type="submit" class="btn btn-success">دفع</button>
                             </div>
                         </form>
                     </div>

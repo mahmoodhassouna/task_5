@@ -150,6 +150,7 @@ class OrderController extends Controller
 
                 $totalAmount = $wallet->totalAmount - $order->projectAmount;
                 $installmentValue = $order->projectAmount / $order->repaymentFinancingAmountMonths;
+                $installmentValue = number_format($installmentValue, 2, '.', '');
                 $monthNumber = $order->repaymentFinancingAmountMonths;
 
 
