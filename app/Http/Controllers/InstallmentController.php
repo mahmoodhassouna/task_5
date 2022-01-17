@@ -109,7 +109,7 @@ class InstallmentController extends Controller
 
 //Lead::whereBetween('created_at', [date('Y-m-d', strtotime($input['from'])), date('Y-m-d', strtotime($input['to']))])->get();
         if(!isset($request->dateTo) && !isset($request->dateFrom)){
-            $ins = Installment::with('order')->whereMonth('installmentDueDate',Carbon::now()->month)->where('installmentStatus','غير مسدد')->whereHas('order',function($q) use ($array1) {
+            $ins = Installment::with('order')->where('installmentStatus','غير مسدد')->whereHas('order',function($q) use ($array1) {
                 $q->where($array1);
             })->get();
 
@@ -120,7 +120,7 @@ class InstallmentController extends Controller
         }else if(isset($request->dateTo))
         {
             $ins = Installment::with('order')
-                ->whereMonth('installmentDueDate',Carbon::now()->month)
+
                 ->where('installmentStatus','غير مسدد')
                 ->where('installmentDueDate','<=',$request->dateTo)
                 ->whereHas('order',function($q) use ($array1) {
@@ -146,7 +146,7 @@ class InstallmentController extends Controller
             ]);
         }else{
             $ins = Installment::with('order')
-                ->whereMonth('installmentDueDate',Carbon::now()->month)
+             //   ->whereMonth('installmentDueDate',Carbon::now()->month)
                 ->where('installmentStatus','غير مسدد')
                 ->where('installmentDueDate','<=',$request->dateTo)
                 ->where('installmentDueDate','>=',$request->dateFrom)
@@ -185,7 +185,7 @@ class InstallmentController extends Controller
 
     public function installmentScheduling()
     {
-        $installments = Installment::where('installmentStatus','غير مسدد')->get();
+        $installments = Installment::with('order')->where('installmentStatus','غير مسدد')->get();
         return response()->json([
             'installmentScheduling'=>$installments
         ]);
@@ -271,10 +271,11 @@ class InstallmentController extends Controller
                 $totalAmount = 0;
                 $installment = Installment::select('installmentAmount')->where('order_id', $request->orderr_id)->where('id', '>=', $request->installment_id)->get();
                 $ins = Installment::find($request->installment_id);
-                $ins2 = Installment::where('order_id', $request->orderr_id)->where('id', '>', $ins->id)->get();
+                $ins2 = Installment::where('order_id', $request->orderr_id)->where('id', '>', $ins->id);
                 $time = strtotime($request->post('newData'));
 
                 if (isset($request->newData) && isset($request->installmentAmount)) {
+
                     if ($request->newData <= Carbon::now()) {
                         return response()->json([
                             'err' => 'التاريخ غير صالح'
@@ -290,27 +291,48 @@ class InstallmentController extends Controller
                             'msg' => 'قيمة القسط اكبر من المبلغ المتبقي عليك',
                         ]);
                     }
+//
+//                    $totalAmount -= $request->installmentAmount;
+//
+//                    $ins->update(['installmentAmount' => $request->installmentAmount,
+//                        'installmentDueDate' => $request->newData
+//                    ]);
+//
+//                    $totalAmount = $totalAmount / $ins2->count();
+//                    $totalAmount = number_format($totalAmount, 2, '.', '');
+//                    if ($totalAmount <= 0) {
+//                        Installment::where('order_id', $request->orderr_id)->where('id', '>', $ins->id)->delete();
+//                    }
+//
+//                    foreach ($ins2 as $key => $t) {
+//                        $key += 1;
+//                        $final = date("Y-m-d", strtotime("+" . $key . "month", $time));
+//                        $t->installmentDueDate = $final;
+//                        $t->installmentAmount = $totalAmount;
+//                        $t->save();
+//
+//                    }
 
                     $totalAmount -= $request->installmentAmount;
 
                     $ins->update(['installmentAmount' => $request->installmentAmount,
-                        'installmentDueDate' => $request->newData
+                    'installmentDueDate'=>$request->post('newData')
                     ]);
+                    Installment::where('order_id', $request->orderr_id)->where('id', '>', $ins->id)->delete();
+                    $newRowValue = ceil($totalAmount / $request->installmentAmount);
+                    for ($i=1; $i<=$newRowValue; $i++){
+                        $installmentAmount = $totalAmount / $newRowValue;
+                        $installmentAmount = number_format($installmentAmount, 2, '.', '');
+                        $ins2->create([
+                            'installmentAmount'=>$installmentAmount ,
+                            'installmentDueDate'=>date("Y-m-d", strtotime("+" . $i . "month", $time)),
+                            'amountPaid'=>0,
+                            'installmentStatus'=>'غير مسدد',
+                            'order_id'=>$ins->order_id,
+                        ]);
 
-                    $totalAmount = $totalAmount / $ins2->count();
-                    $totalAmount = number_format($totalAmount, 2, '.', '');
-                    if ($totalAmount <= 0) {
-                        Installment::where('order_id', $request->orderr_id)->where('id', '>', $ins->id)->delete();
                     }
 
-                    foreach ($ins2 as $key => $t) {
-                        $key += 1;
-                        $final = date("Y-m-d", strtotime("+" . $key . "month", $time));
-                        $t->installmentDueDate = $final;
-                        $t->installmentAmount = $totalAmount;
-                        $t->save();
-
-                    }
                     DB::commit();
                     return response()->json([
                         'status' => 200,
@@ -330,12 +352,21 @@ class InstallmentController extends Controller
                     ]);
 
 
-                    foreach ($ins2 as $key => $t) {
-                        $key += 1;
-                        $final = date("Y-m-d", strtotime("+" . $key . "month", $time));
-                        $t->installmentDueDate = $final;
-                        $t->save();
+//                    foreach ($ins2 as $key => $t) {
+//                        $key += 1;
+//                        $final = date("Y-m-d", strtotime("+" . $key . "month", $time));
+//                        $t->installmentDueDate = $final;
+//                        $t->save();
+//
+//                    }
+                    $itration = $ins2->count();
 
+                    for ($i=1; $i<=$itration; $i++){
+
+                        $final = date("Y-m-d", strtotime("+" . $i . "month", $time));
+                        $ins2->update([
+                            'installmentDueDate'=>$final
+                        ]);
                     }
 
                     DB::commit();
@@ -364,20 +395,34 @@ class InstallmentController extends Controller
 
                     $ins->update(['installmentAmount' => $request->installmentAmount]);
 
-                    $totalAmount = $totalAmount / $ins2->count();
-                    $totalAmount = number_format($totalAmount, 2, '.', '');
+                   // $totalAmount = $totalAmount / $ins2->count();
+                   // $totalAmount = number_format($totalAmount, 2, '.', '');
 
-                    // return $totalAmount;
-                    if ($totalAmount <= 0) {
+                  //  if ($totalAmount <= 0) {
                         Installment::where('order_id', $request->orderr_id)->where('id', '>', $ins->id)->delete();
+                  //  }
+
+                    ///test
+
+                    $newRowValue = ceil($totalAmount / $request->installmentAmount);
+                    // return $totalAmount;
+
+                    for ($i=1; $i<=$newRowValue; $i++){
+                        $installmentAmount = $totalAmount / $newRowValue;
+                        $installmentAmount = number_format($installmentAmount, 2, '.', '');
+                        $ins2->create([
+                            'installmentAmount'=>$installmentAmount ,
+                            'installmentDueDate'=>date("Y-m-d", strtotime("+" . $i . "month", strtotime($ins->installmentDueDate))),
+                            'amountPaid'=>0,
+                            //'paymentDate'=>'k',
+                            'installmentStatus'=>'غير مسدد',
+                            'order_id'=>$ins->order_id,
+                        ]);
                     }
-
-                    foreach ($ins2 as $t) {
-                        $t->installmentAmount = $totalAmount;
-                        $t->save();
-                    }
-
-
+//                    foreach ($ins2 as $t) {
+//                        $t->installmentAmount = $totalAmount;
+//                        $t->save();
+//                    }
                     DB::commit();
                     return response()->json([
                         'status' => 200,

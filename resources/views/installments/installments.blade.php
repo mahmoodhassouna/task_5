@@ -22,7 +22,73 @@
         <section class="content">
             <div class="container-fluid">
 
-                <!-- /.row -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+
+                            <!-- /.card-header -->
+
+                                <table class="table table-head-fixed">
+                                    <thead>
+
+                                    <tr>
+                                        <form id="installmentsSearchForm" method="post">
+                                            <th>
+                                                <div class="col">
+                                                    <label>اسم المستفيد</label>
+                                                    <input name="beneficiaryName" class="form-control form-control-lg">
+                                                </div>
+
+
+                                            </th>
+                                            <th>
+                                                <div class="col">
+                                                    <label>اسم المشروع</label>
+                                                    <input name="projectName" class="form-control form-control-lg">
+                                                </div>
+
+                                            </th>
+
+                                            <th></th>
+                                            <th>
+                                                <div class="col">
+                                                    <label>تاريخ الاستحقاق من</label>
+                                                    <input name="dateFrom" type="date" class="form-control form-control-lg">
+                                                </div>
+
+                                            </th>
+
+                                            <th> </th>
+
+                                            <th>
+                                                <div class="col">
+                                                    <label>تاريخ الاستحقاق الى</label>
+                                                    <input name="dateTo" type="date" class="form-control form-control-lg">
+                                                </div>
+                                            </th>
+                                            <th>
+                                                <div class="col">
+                                                    <button  class="btn btn-info">بحث</button>
+                                                </div>
+                                            </th>
+                                        </form>
+                                    </tr>
+
+                                    </thead>
+{{--                                    <tbody id="installmentsSerch">--}}
+{{--                                    <tr>--}}
+
+{{--                                    </tr>--}}
+
+{{--                                    </tbody>--}}
+                                </table>
+
+                            <!-- /.card-body -->
+                        </div>
+                        <!-- /.card -->
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
@@ -39,8 +105,10 @@
                                 </div>
                             </div>
                             <!-- /.card-header -->
+
                             <div  class="card-body table-responsive p-0" style="height: 300px;">
                                 <table class="table table-head-fixed">
+
                                     <thead>
                                     <tr>
                                         <th>#</th>
@@ -75,72 +143,7 @@
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
 
-                            <!-- /.card-header -->
-                            <div  class="card-body table-responsive p-0" style="height: 300px;">
-                                <table class="table table-head-fixed">
-                                    <thead>
-
-                                    <tr>
-                                        <form id="installmentsSearchForm" method="post">
-                                        <th>
-                                            <div class="col">
-                                                <label>اسم المستفيد</label>
-                                                <input name="beneficiaryName" class="form-control form-control-lg">
-                                            </div>
-
-
-                                        </th>
-                                        <th>
-                                            <div class="col">
-                                                <label>اسم المشروع</label>
-                                                <input name="projectName" class="form-control form-control-lg">
-                                            </div>
-
-                                           </th>
-
-                                        <th></th>
-                                        <th>
-                                            <div class="col">
-                                                <label>تاريخ الاستحقاق من</label>
-                                                <input name="dateFrom" type="date" class="form-control form-control-lg">
-                                            </div>
-
-                                        </th>
-
-                                        <th> </th>
-
-                                        <th>
-                                            <div class="col">
-                                                <label>تاريخ الاستحقاق الى</label>
-                                                <input name="dateTo" type="date" class="form-control form-control-lg">
-                                            </div>
-                                        </th>
-                                            <th>
-                                            <div class="col">
-                                                <button  class="btn btn-info">بحث</button>
-                                            </div>
-                                           </th>
-                                        </form>
-                                    </tr>
-
-                                    </thead>
-                                    <tbody id="installmentsSerch">
-                                    <tr>
-
-                                    </tr>
-
-                                    </tbody>
-                                </table>
-                            </div>
-                            <!-- /.card-body -->
-                        </div>
-                        <!-- /.card -->
-                    </div>
-                </div>
                 <!-- /.row -->
             </div>
         </section>

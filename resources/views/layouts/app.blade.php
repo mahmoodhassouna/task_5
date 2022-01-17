@@ -360,6 +360,8 @@
                     $.each(response.installmentScheduling ,function (key ,item) {
                         $('#installmentScheduling').append('<tr>\
                                        <td>'+item.id+'</td>\
+                                        <td>'+item.order.projectName+'</td>\
+                                       <td>'+item.order.beneficiaryName+'</td>\
                                        <td>'+item.installmentDueDate+'</td>\
                                        <td>'+item.installmentAmount+'</td>\
                                        <td>'+(item.installmentStatus == 'غير مسدد' ? '<span class="badge bg-danger">غير مسدد</span>':item.installmentStatus == 'مسدد' ? '<span class="badge bg-success">مسدد</span>':'<span class="badge bg-warning">مسدد جزئي</span>')+'</td>\
@@ -1179,15 +1181,16 @@
 
                          if(data.status == 200){
 
-                             $('#installmentsSerch').html("");
+                             $('#installmentsDue').html("");
                              $.each(data.data ,function (key ,item) {
-                                 $('#installmentsSerch').append('<tr>\
+                                 $('#installmentsDue').append('<tr>\
                                        <td>'+item.id+'</td>\
-                                       <td>'+item.order.beneficiaryName+'</td>\
                                        <td>'+item.order.projectName+'</td>\
+                                       <td>'+item.order.beneficiaryName+'</td>\
                                        <td>'+item.installmentDueDate+'</td>\
                                        <td>'+item.installmentAmount+'</td>\
                                        <td>'+(item.paymentDate == null ? 'غير مدفوع':item.amountPaid)+'</td>\
+                                       <td>'+item.amountPaid+'</td>\
                                        <td>'+(item.installmentStatus == 'غير مسدد' ? '<span class="badge bg-danger">غير مسدد</span>':'')+'</td>\
                                           </tr>');
                              });
