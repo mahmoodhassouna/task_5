@@ -262,11 +262,8 @@
 
 
 
-
-
-
     $(document).ready(function () {
-
+        $('#errorDiv').hide();
         wallets();
         orders();
         installment();
@@ -623,6 +620,89 @@
 
                         }else {
                             $('#addWallet').find('input').val('');
+                            Swal.fire({
+                                position: 'top-end',
+                                icon: 'error',
+                                title: data.msg,
+                                showConfirmButton: false,
+                                timer: 1500
+                            })
+                        }
+                    }
+
+
+                });
+
+            }
+
+
+
+
+        });
+
+        $("#importForm").validate({
+            rules: {
+                file: {
+                    required: true,
+
+                }
+            },
+            messages: {
+                file: {
+                    required: "يرجى اختيار ملف",
+                }
+            },submitHandler: function(form) {
+
+                var formData = new FormData($('#importForm')[0]);
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+                $.ajax({
+                    type: 'post',
+                    enctype: 'multipart/form-data',
+                    url: "{{route('installmentImportExcel')}}",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    cache: false,
+                    success: function (data) {
+                        if (data.status == 400) {
+                            $('#display_error').html("");
+                            $('#display_error').addClass('alert alert-danger');
+                            $.each(data.errors, function (key, err_value) {
+                                $('#display_error').append('<li >' + err_value + '</li>');
+                            });
+                        }
+                        else if(data.status == 200){
+
+                            $('#errorDiv').show();
+
+                            $('#importForm').find('input').val('');
+                            $('#countOfFail').html("");
+                            $('#countOfSuccess').html("");
+                            $('#messagesFail').html("");
+
+                            $('#countOfFail').append('<span style="color: red">' + data.countOfFail + '</span>');
+                            $('#countOfSuccess').append('<span style="color: green" >' + data.countOfSuccess + '</span>');
+
+
+                            $.each(data.messagesFail, function (key, err_value) {
+                                $('#messagesFail').append('<li style="color: red" > هناك خطأ في القسط التابع لمشروع رقم' + err_value.idNumber + err_value.reason +'</li>');
+                            });
+
+                            Swal.fire({
+                                position: 'top-end',
+                                icon: 'success',
+                                title: data.msg,
+                                showConfirmButton: false,
+                                timer: 1500
+                            })
+
+                        }else {
+                            $('#errorDiv').hide();
+                            $('#importForm').find('input').val('');
                             Swal.fire({
                                 position: 'top-end',
                                 icon: 'error',
@@ -1191,7 +1271,7 @@
                                        <td>'+item.installmentAmount+'</td>\
                                        <td>'+(item.paymentDate == null ? 'غير مدفوع':item.amountPaid)+'</td>\
                                        <td>'+item.amountPaid+'</td>\
-                                       <td>'+(item.installmentStatus == 'غير مسدد' ? '<span class="badge bg-danger">غير مسدد</span>':'')+'</td>\
+                                       <td>'+(item.installmentStatus == 'غير مسدد' ? '<span class="badge bg-danger">غير مسدد</span>':'<span class="badge bg-warning">مسدد جزئي</span>')+'</td>\
                                           </tr>');
                              });
 

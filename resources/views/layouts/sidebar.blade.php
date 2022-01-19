@@ -59,6 +59,12 @@
                             <p>تسديد الاقساط</p>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{route('importExcel')}}" class="nav-link">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>استرداد الاقساط</p>
+                        </a>
+                    </li>
                 </ul>
             </li>
 

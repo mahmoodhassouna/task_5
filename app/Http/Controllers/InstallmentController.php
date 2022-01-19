@@ -3,12 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Installment;
+use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Wallet;
+use App\Models\WithdrawAddCash;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use PhpParser\Builder;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\Payments;
+use function PHPUnit\Framework\isEmpty;
+
 
 class InstallmentController extends Controller
 {
@@ -68,6 +75,16 @@ class InstallmentController extends Controller
                 $wallet->update([
                     'totalAmount'=>$total,
                 ]);
+                 $projectName = Order::find($ins->order_id);
+                WithdrawAddCash::insert([
+                    'amount' => $request->amountPaid,
+                    'date' => $request->post('paymentDate'),
+                    'reason' => ($amount < 0.009 ? 'تم تسديد قيمة قسط مشروع':'تم تسديد دفعة جزئية من قسط مشروع') . $projectName->projectName,
+                    'attachFile' => 's.png',
+                    'type' => 'اضافة',
+                    'wallet_id' => $request->post('wallet_id'),
+                ]);
+
                 DB::commit();
                 return response()->json([
                     'status'=>200,
@@ -97,19 +114,17 @@ class InstallmentController extends Controller
             $array1 += ['beneficiaryName'=>$request->beneficiaryName];
         }
 
-        //$array2+=['installmentStatus','غير مسدد'];
-
-
         if(isset($request->dateFrom)){
             $array2 += ['installmentDueDate','>=',$request->dateFrom];
         }
 
-
-
-
 //Lead::whereBetween('created_at', [date('Y-m-d', strtotime($input['from'])), date('Y-m-d', strtotime($input['to']))])->get();
         if(!isset($request->dateTo) && !isset($request->dateFrom)){
-            $ins = Installment::with('order')->where('installmentStatus','غير مسدد')->whereHas('order',function($q) use ($array1) {
+
+                $ins = Installment::with('order')
+                ->where('installmentStatus','!=','مسدد')
+                ->whereMonth('installmentDueDate',Carbon::now()->month)
+                ->whereHas('order',function($q) use ($array1) {
                 $q->where($array1);
             })->get();
 
@@ -120,9 +135,9 @@ class InstallmentController extends Controller
         }else if(isset($request->dateTo))
         {
             $ins = Installment::with('order')
-
-                ->where('installmentStatus','غير مسدد')
+                ->where('installmentStatus','!=','مسدد')
                 ->where('installmentDueDate','<=',$request->dateTo)
+                ->whereMonth('installmentDueDate',Carbon::now()->month)
                 ->whereHas('order',function($q) use ($array1) {
                 $q->where($array1);
             })->get();
@@ -134,8 +149,9 @@ class InstallmentController extends Controller
         }else if(isset($request->dateFrom))
         {
             $ins = Installment::with('order')
-                ->where('installmentStatus','غير مسدد')
+                ->where('installmentStatus','!=','مسدد')
                 ->where('installmentDueDate','>=',$request->dateFrom)
+                ->whereMonth('installmentDueDate',Carbon::now()->month)
                 ->whereHas('order',function($q) use ($array1) {
                     $q->where($array1);
                 })->get();
@@ -146,8 +162,7 @@ class InstallmentController extends Controller
             ]);
         }else{
             $ins = Installment::with('order')
-             //   ->whereMonth('installmentDueDate',Carbon::now()->month)
-                ->where('installmentStatus','غير مسدد')
+                ->where('installmentStatus','!=','مسدد')
                 ->where('installmentDueDate','<=',$request->dateTo)
                 ->where('installmentDueDate','>=',$request->dateFrom)
                 ->whereHas('order',function($q) use ($array1) {
@@ -172,7 +187,11 @@ class InstallmentController extends Controller
 
     public function installmentsDue()
     {
-        $installments = Installment::whereMonth('installmentDueDate',Carbon::now()->month)->with('order')->get();
+        $installments = Installment::whereMonth('installmentDueDate',Carbon::now()->month)
+
+          ->where('installmentStatus','غير مسدد')
+            ->orWhere('installmentStatus', 'مسدد جزئي')
+            ->with('order')->get();
         return response()->json([
             'installmentsDue'=>$installments
         ]);
@@ -182,6 +201,152 @@ class InstallmentController extends Controller
     {
         return view('installments.installmentScheduling');
     }
+
+    public function importExcel()
+    {
+        return view('installments.importExcel');
+    }
+
+    protected function paymentQuery($id, $msg, $status, $fileName){
+        Payment::where('id',$id)->update([
+            'reason'=>$msg,
+            'status'=>$status,
+            'fileName'=>$fileName,
+            'iteration'=>1,
+        ]);
+    }
+
+    protected function returnErrors()
+    {
+        $lastFileName = DB::table('payment')->latest('fileName')->first();
+
+        $countOfSuccess = Payment::where('status',1)->where('fileName',$lastFileName->fileName)->count();
+        $countOfFail = Payment::where('status',0)->where('fileName',$lastFileName->fileName)->count();
+        $messagesFail = Payment::where('status',0)->where('fileName',$lastFileName->fileName)->get();
+
+        return response()->json([
+            'status' => 200,
+            'countOfSuccess' => $countOfSuccess,
+            'countOfFail' => $countOfFail,
+            'messagesFail' => $messagesFail,
+            'msg' => 'العملية تمت بنجاح',
+        ]);
+    }
+
+    protected function serchAboutFileName($fileName){
+        $pay = Payment::where('fileName',$fileName)->get();
+       if($pay->isEmpty()){
+           return true;
+       }
+       return false;
+    }
+
+    public function import(Request $request)
+    {
+     //  DB::beginTransaction();
+        try{
+
+            $validator = Validator::make($request->all(), [
+                'file' => 'required|mimes:xls,xlsx',
+
+            ] ,[
+                    'file.required'=>'يرجى اختيار الملف',
+                    'file.mimes'=>'xls,xlsx صيغة الملف يجب ان تكون ',
+                ]
+            );
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 400,
+                    'errors' => $validator->messages()
+                ]);
+            }else {
+
+                $file = $request->file('file');
+
+                $filename = $file->getClientOriginalName();
+                $pay = Payment::where('iteration',1)->get();
+
+
+
+                        if(InstallmentController::serchAboutFileName($filename))
+                        {
+                            Excel::import(new Payments(),$file);
+                            $pay2 = Payment::where('iteration',0)->get();
+
+                            foreach ($pay2 as $item){
+
+                            $ins = Installment::with('order')
+                                ->whereHas('order',function($q) use ($item) {
+                                    $q->where('idNumber',$item->idNumber);
+                                })->get();
+
+                            if ($ins->isEmpty()){
+
+                                InstallmentController::paymentQuery($item->id,'القسط غير موجود في جدول الاقساط', 0, $filename);
+
+                            }else{
+                                foreach ($ins as $it){
+
+                                    $d1 =  Carbon::createFromFormat('Y-m-d', $it->installmentDueDate)->format('d-m-Y');
+                                    $d2 =  Carbon::createFromFormat('Y-m-d', $item->paymentDate)->format('d-m-Y');
+
+                                    if($d1 == $d2){
+
+                                        $amountPaid = $it->amountPaid + $item->amountPaid;
+
+                                        if($item->amountPaid <= ($it->installmentAmount - $it-> amountPaid) ){
+
+                                            InstallmentController::paymentQuery($item->id,'تم دفع القسط', 1, $filename);
+
+                                            $amount =  $it->installmentAmount - $amountPaid;
+                                            $it->update([
+                                                'amountPaid'=> $amountPaid,
+                                                'paymentDate'=> $d1,
+                                                'installmentStatus'=>($amount < 0.009 ? 'مسدد':'مسدد جزئي'),
+                                            ]);
+
+
+                                        }else if($it->installmentAmount == $it-> amountPaid){
+                                            InstallmentController::paymentQuery($item->id,'القسط مسدد مسبقا', 0, $filename);
+                                        }else{
+                                            InstallmentController::paymentQuery($item->id,'المبلغ المدفوع اكبر من قيمة القسط', 0, $filename);
+
+                                        }
+                                        break;
+                                    }
+
+                                    InstallmentController::paymentQuery($item->id,'القسط غير مستحق بهذا اليوم', 0, $filename);
+                                }
+                            }
+
+                        }
+
+                     //   DB::commit();
+
+                        return InstallmentController::returnErrors();
+                        }else{
+                            return response()->json([
+                                'status'=>401,
+                                'msg'=>'عذرا تم رفع الملف سابقا',
+                            ]);
+                        }
+
+                    }
+
+
+
+
+        }catch (Exception $ex){
+           // DB::rollback();
+            return response()->json([
+                'status' => 401,
+                'msg' => 'فشلت العملية حاول مجددا',
+            ]);
+        }
+
+    }
+
 
     public function installmentScheduling()
     {

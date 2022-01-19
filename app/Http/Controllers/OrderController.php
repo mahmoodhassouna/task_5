@@ -171,6 +171,7 @@ class OrderController extends Controller
                     'date' => $request->post('date'),
                     'reason' => 'تم سحب المبلغ لتمويل مشروع'.$order->projectName,
                     'attachFile' => 's.png',
+                    'type' => 'سحب',
                     'wallet_id' => $request->post('wallet_id'),
                 ]);
 

@@ -77,4 +77,9 @@ Route::middleware(['auth'])->group(function (){
     Route::get('installmentsPayment',[InstallmentController::class,'installmentsPayment'])->name('installmentsPayment');
     Route::post('installment/payment',[InstallmentController::class,'Payment'])->name('installmentPayment');
 
+
+    Route::get('importExcel',[InstallmentController::class,'importExcel'])->name('importExcel');
+    Route::post('installment/importExcel',[InstallmentController::class,'import'])->name('installmentImportExcel');
+
+
 });

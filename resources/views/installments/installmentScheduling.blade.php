@@ -21,7 +21,7 @@
         <section class="content">
             <div class="container-fluid">
 
-                <!-- /.row -->
+                <ul id="display_error"></ul>
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
