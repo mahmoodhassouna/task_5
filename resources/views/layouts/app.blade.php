@@ -1342,6 +1342,12 @@
             $('#orderr_id').val(orderr_id);
         });
 
+        $(document).on('click', '.deleteWallet', function () {
+            var wallet_id = $(this).val();
+            $('#exampleModal').modal('show');
+            $('#wallet_id').val(wallet_id);
+        });
+
         $("#rejectedOrder").validate({
             rules: {
                 reason: {
